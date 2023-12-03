@@ -1,112 +1,107 @@
 package pl.javastart.task;
 
-public class MixContract extends Contract {
+public class MixContract extends CardPhoneContract {
 
-    private double additionalAccountBalance;
     private int smsLimit;
     private int mmsLimit;
-    private int callLimit;
-    private double smsPrice;
-    private double mmsPrice;
-    private double callPrice;
+    private double callLimit;
     private int remainingSms;
     private int remainingMms;
-    private int remainingCallSeconds;
+    private double remainingCallMinutes;
 
-    public MixContract(double additionalAccountBalance, int smsLimit, int mmsLimit, int callLimit, double smsPrice, double mmsPrice, double callPrice) {
-        this.additionalAccountBalance = additionalAccountBalance;
+    public MixContract(double accountBalance, int smsLimit, int mmsLimit, double callLimit, double smsPrice, double mmsPrice, double callPricePerMinute) {
+        super(accountBalance, smsPrice, mmsPrice, callPricePerMinute);
         this.smsLimit = smsLimit;
         this.mmsLimit = mmsLimit;
         this.callLimit = callLimit;
-        this.smsPrice = smsPrice;
-        this.mmsPrice = mmsPrice;
-        this.callPrice = callPrice;
         this.remainingSms = smsLimit;
         this.remainingMms = mmsLimit;
-        this.remainingCallSeconds = callLimit;
+        this.remainingCallMinutes = callLimit;
     }
 
     @Override
     public boolean canSendSms() {
-        return remainingSms > 0 || getSmsPrice() <= additionalAccountBalance;
+        return remainingSms > 0 || smsPrice <= accountBalance;
     }
 
     @Override
     public boolean canSendMms() {
-        return remainingMms > 0 || getMmsPrice() <= additionalAccountBalance;
-    }
-
-    @Override
-    public boolean canCall(int seconds) {
-        return remainingCallSeconds >= seconds || getCallPrice() * seconds <= additionalAccountBalance;
+        return remainingMms > 0 || mmsPrice <= accountBalance;
     }
 
     @Override
     public double getRemainingAccountBalance() {
-        return additionalAccountBalance;
+        return accountBalance;
     }
 
     @Override
-    public void useSmsService(double amount) {
+    public void useSmsService() {
         if (remainingSms > 0) {
             remainingSms--;
-        } else if (remainingSms == 0 && additionalAccountBalance >= amount) {
-            additionalAccountBalance -= amount;
+        } else if (accountBalance >= smsPrice) {
+            accountBalance -= smsPrice;
         }
     }
 
     @Override
-    public void useMmsService(double amount) {
+    public void useMmsService() {
         if (remainingMms > 0) {
             remainingMms--;
-        } else if (remainingMms == 0 && additionalAccountBalance >= amount) {
-            additionalAccountBalance -= amount;
+        } else if (accountBalance >= mmsPrice) {
+            accountBalance -= mmsPrice;
         }
     }
 
     @Override
-    public void useCallService(double amount, int seconds) {
-        if (remainingCallSeconds >= seconds) {
-            remainingCallSeconds -= seconds;
-        } else if (additionalAccountBalance >= amount * seconds) {
-            additionalAccountBalance -= amount * seconds;
+    public int useCallService(int seconds) {
+        double availableSecondsForCall = remainingCallMinutes * 60;
+
+        double secondsFromLimit;
+        double secondsFromBalance;
+
+        if (availableSecondsForCall < seconds) {
+            secondsFromLimit = availableSecondsForCall;
+            if (seconds > availableSecondsForCall) {
+                secondsFromBalance = seconds - availableSecondsForCall;
+            } else {
+                secondsFromBalance = 0;
+            }
+        } else {
+            secondsFromLimit = seconds;
+            secondsFromBalance = 0;
         }
+
+        if (remainingCallMinutes * 60 >= secondsFromLimit) {
+            remainingCallMinutes -= secondsFromLimit / 60.0;
+        } else {
+            remainingCallMinutes = 0;
+        }
+
+        double costFromBalance = secondsFromBalance * callPricePerMinute / 60;
+        if (costFromBalance <= accountBalance) {
+            accountBalance -= costFromBalance;
+        } else {
+            if (accountBalance / callPricePerMinute < secondsFromBalance) {
+                secondsFromBalance = accountBalance / callPricePerMinute;
+            }
+            accountBalance = 0;
+        }
+
+        return (int) (secondsFromLimit + secondsFromBalance);
+    }
+
+    @Override
+    public String getAccountState() {
+        return "Pozostałe SMSy: " + getRemainingSms() +
+                "\nPozostałe MMSy: " + getRemainingMms() +
+                "\nPozostałe sekundy rozmowy: " + getRemainingCallSeconds() +
+                String.format("\nPozostały stan konta: %.2f zł%n", getRemainingAccountBalance());
 
     }
 
     @Override
     public double createBill() {
         return 0;
-    }
-
-    @Override
-    public boolean isCardPhoneContract() {
-        return false;
-    }
-
-    @Override
-    public boolean isSubscription() {
-        return false;
-    }
-
-    @Override
-    public boolean isMixContract() {
-        return true;
-    }
-
-    @Override
-    double getSmsPrice() {
-        return smsPrice;
-    }
-
-    @Override
-    double getMmsPrice() {
-        return mmsPrice;
-    }
-
-    @Override
-    double getCallPrice() {
-        return callPrice;
     }
 
     public int getSmsLimit() {
@@ -125,7 +120,7 @@ public class MixContract extends Contract {
         this.mmsLimit = mmsLimit;
     }
 
-    public int getCallLimit() {
+    public double getCallLimit() {
         return callLimit;
     }
 
@@ -149,11 +144,11 @@ public class MixContract extends Contract {
         this.remainingMms = remainingMms;
     }
 
-    public int getRemainingCallSeconds() {
-        return remainingCallSeconds;
+    public double getRemainingCallSeconds() {
+        return remainingCallMinutes;
     }
 
-    public void setRemainingCallMinutes(int remainingCallMinutes) {
-        this.remainingCallSeconds = remainingCallMinutes;
+    public void setRemainingCallMinutes(double remainingCallMinutes) {
+        this.remainingCallMinutes = remainingCallMinutes;
     }
 }

@@ -3,15 +3,15 @@ package pl.javastart.task;
 public class CardPhoneContract extends Contract {
 
     public double accountBalance;
-    private double smsPrice;
-    private double mmsPrice;
-    private double callPrice;
+    protected double smsPrice;
+    protected double mmsPrice;
+    protected double callPricePerMinute;
 
-    public CardPhoneContract(double accountBalance, double smsPrice, double mmsPrice, double callPrice) {
+    public CardPhoneContract(double accountBalance, double smsPrice, double mmsPrice, double callPricePerMinute) {
         this.accountBalance = accountBalance;
         this.smsPrice = smsPrice;
         this.mmsPrice = mmsPrice;
-        this.callPrice = callPrice;
+        this.callPricePerMinute = callPricePerMinute;
     }
 
     public double getAccountBalance() {
@@ -39,11 +39,11 @@ public class CardPhoneContract extends Contract {
     }
 
     public double getCallPrice() {
-        return callPrice;
+        return callPricePerMinute;
     }
 
     public void setCallPrice(double callPrice) {
-        this.callPrice = callPrice;
+        this.callPricePerMinute = callPrice;
     }
 
     @Override
@@ -57,49 +57,42 @@ public class CardPhoneContract extends Contract {
     }
 
     @Override
-    public boolean canCall(int seconds) {
-        return seconds * callPrice <= accountBalance;
-    }
-
-    @Override
     public double getRemainingAccountBalance() {
         return accountBalance;
     }
 
     @Override
-    public void useSmsService(double amount) {
-        accountBalance -= amount;
+    public void useSmsService() {
+        accountBalance -= smsPrice;
     }
 
     @Override
-    public void useMmsService(double amount) {
-        accountBalance -= amount;
+    public void useMmsService() {
+        accountBalance -= mmsPrice;
 
     }
 
     @Override
-    public void useCallService(double amount, int seconds) {
-        accountBalance -= amount * seconds;
+    public int useCallService(int seconds) {
+        double availableSecondsForCall = accountBalance / callPricePerMinute * 60;
+        if (seconds <= availableSecondsForCall) {
+            accountBalance -= seconds * callPricePerMinute / 60;
+            return seconds;
+        } else {
+            int secondsToUse = (int) availableSecondsForCall;
+            accountBalance = 0;
+            return secondsToUse;
+        }
+    }
+
+    @Override
+    public String getAccountState() {
+        return String.format("Na koncie zostało: %.2f zł%n", getRemainingAccountBalance());
     }
 
     @Override
     public double createBill() {
         return 0;
-    }
-
-    @Override
-    public boolean isCardPhoneContract() {
-        return true;
-    }
-
-    @Override
-    public boolean isSubscription() {
-        return false;
-    }
-
-    @Override
-    public boolean isMixContract() {
-        return false;
     }
 
 }

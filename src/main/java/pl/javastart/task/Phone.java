@@ -14,7 +14,7 @@ public class Phone {
     public void sendSms() {
         if (contract.canSendSms()) {
             smsCounter++;
-            contract.useSmsService(contract.getSmsPrice());
+            contract.useSmsService();
             System.out.println("SMS wysłany");
         } else {
             System.out.println("Nie udało się wysłać SMSa");
@@ -23,10 +23,13 @@ public class Phone {
     }
 
     public void call(int seconds) {
-        if (contract.canCall(seconds)) {
+        int callDuration = contract.useCallService(seconds);
+        if (callDuration == seconds) {
             callCounter += seconds;
-            contract.useCallService(contract.getCallPrice(), seconds);
             System.out.println("Rozmowa trwała: " + seconds + " sekund");
+        } else if (callDuration > 0) {
+            callCounter += callDuration;
+            System.out.println("Rozmowa przerwana po " + callDuration + " sekundach");
         } else {
             System.out.println("Nie można zrealizować rozmowy");
 
@@ -36,7 +39,7 @@ public class Phone {
     public void sendMms() {
         if (contract.canSendMms()) {
             mmsCounter++;
-            contract.useMmsService(contract.getMmsPrice());
+            contract.useMmsService();
             System.out.println("MMS wysłany");
         } else {
             System.out.println("Nie udało się wysłać MMSa");
@@ -49,17 +52,8 @@ public class Phone {
         System.out.println("Wysłanych SMSów: " + smsCounter);
         System.out.println("Wysłanych MMSów: " + mmsCounter);
         System.out.println("Liczba sekund rozmowy: " + callCounter);
-        if (contract.isCardPhoneContract()) {
-            System.out.printf("Na koncie zostało: %.2f zł%n", contract.getRemainingAccountBalance());
-        } else if (contract.isSubscription()) {
-            System.out.printf("Rachunek. Do zapłaty: %.2f zł%n", contract.createBill());
-        } else if (contract.isMixContract()) {
-            MixContract mixContract = (MixContract) contract;
-            System.out.println("Pozostałe SMSy: " + mixContract.getRemainingSms());
-            System.out.println("Pozostałe MMSy: " + mixContract.getRemainingMms());
-            System.out.println("Pozostałe sekundy rozmowy: " + mixContract.getRemainingCallSeconds());
-            System.out.printf("Pozostały stan konta: %.2f zł%n", mixContract.getRemainingAccountBalance());
-        }
+        System.out.println(contract.getAccountState());
+
     }
 
     public Contract getContract() {

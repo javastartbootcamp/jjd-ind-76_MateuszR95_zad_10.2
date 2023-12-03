@@ -27,58 +27,28 @@ public class Subscription extends Contract {
     }
 
     @Override
-    public boolean canCall(int seconds) {
-        return true;
-    }
-
-    @Override
     public double getRemainingAccountBalance() {
         return 0;
     }
 
     @Override
-    public void useSmsService(double amount) {
+    public void useSmsService() {
 
     }
 
     @Override
-    public void useMmsService(double amount) {
+    public void useMmsService() {
 
     }
 
     @Override
-    public void useCallService(double amount, int seconds) {
-
+    public int useCallService(int seconds) {
+        return seconds;
     }
 
     @Override
-    public boolean isCardPhoneContract() {
-        return false;
-    }
-
-    @Override
-    public boolean isSubscription() {
-        return true;
-    }
-
-    @Override
-    public boolean isMixContract() {
-        return false;
-    }
-
-    @Override
-    double getSmsPrice() {
-        return 0;
-    }
-
-    @Override
-    double getMmsPrice() {
-        return 0;
-    }
-
-    @Override
-    double getCallPrice() {
-        return 0;
+    public String getAccountState() {
+        return String.format("Rachunek. Do zapłaty: %.2f zł%n", createBill());
     }
 
     @Override
